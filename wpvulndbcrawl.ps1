@@ -109,7 +109,7 @@ if ($searchType -eq "wordpresses")
     # proceed with URL extraction for "wordpresses"
     Get-RefURLs
 }
-else
+elseif ($searchType -eq "plugins" -or $searchType -eq "themes")
 {
     # else proceed with URL extraction for "plugins" or "themes"
     Get-RefURLs
