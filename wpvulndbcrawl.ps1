@@ -1,4 +1,5 @@
-﻿Param (
+﻿Param
+(
     [Parameter(Mandatory=$True,Position=1)]
     [ValidateSet(“wordpresses”,”plugins”,”themes”)] 
     [string]$searchType,
@@ -7,38 +8,47 @@
     [string]$searchQuery
 )
 
-# stuff to handle wordpress version url crap
-if ($searchType -eq "wordpresses")
+# extracts URLs nested inside "references"
+Function Get-RefURLs
 {
-    $searchQuery = $searchQuery -replace '[.]'
-}
+    # create a request URL with the args from cmdline params and execute the web request
+    $uri = "https://wpvulndb.com/api/v2"
+    $webCall = Invoke-WebRequest -URI $uri/$searchType/$searchQuery
 
-# create a request URL with the args from cmdline params and execute the web request
-$uri = "https://wpvulndb.com/api/v2"
-$webCall = Invoke-WebRequest -URI $uri/$searchType/$searchQuery
-$vulns = ($webCall.content | ConvertFrom-JSON).$searchQuery.vulnerabilities
-
-# set index to iterate through list of vulns returned from the web request
-$vulnCount = $vulns.count - 1
-
-# interate through list of vulns
-For ($vulnIndex=0; $vulnIndex -le $vulnCount; $vulnIndex++)
-{
-    # count the number of URLs for each vuln
-    $urlCount = $vulns[$vulnIndex].references.url.count
-    
-    # set index to iterate through list of URLs
-    $urlIndex = $urlCount - 1
-
-    # extract URLs from nested objects and insert them back into the original master object as separate properties
-    For ($i=0; $i -le $urlIndex; $i++)
+    # check if searchType equals "wordpresses"
+    if ($searchType -eq "wordpresses")
     {
-            $vulns[$vulnIndex] | Add-Member -Type NoteProperty -Name url_$i -Value $vulns[$vulnIndex].references.url[$i]
+        # need this because of the way WPVULNDB API works when queried for "wordpresses"
+        $vulns = ($webCall.content | ConvertFrom-JSON).$newSearchQuery.vulnerabilities
     }
-}
+    else
+    {
+        # else continue with normal request for "plugins" or "themes"
+        $vulns = ($webCall.content | ConvertFrom-JSON).$searchQuery.vulnerabilities
+    }
 
-# display the final parsed data
-$vulns | Select-Object -Property * -ExcludeProperty references
+    # set index to iterate through list of vulns returned from the web request
+    $vulnCount = $vulns.count - 1
+
+    # interate through list of vulns
+    For ($vulnIndex=0; $vulnIndex -le $vulnCount; $vulnIndex++)
+    {
+        # count the number of URLs for each vuln
+        $urlCount = $vulns[$vulnIndex].references.url.count
+    
+        # set index to iterate through list of URLs
+        $urlIndex = $urlCount - 1
+
+        # extract URLs from nested objects and insert them back into the original master object as separate properties
+        For ($i=0; $i -le $urlIndex; $i++)
+        {
+            $vulns[$vulnIndex] | Add-Member -Type NoteProperty -Name url_$i -Value $vulns[$vulnIndex].references.url[$i]
+        }
+    }
+
+    # display the final parsed results
+    $vulns | Select-Object -Property * -ExcludeProperty references
+}
 
 # build serach index to aid users in their queries
 Function Build_Index
@@ -84,4 +94,23 @@ Function Build_Index
 	# take arraylist and sort alphabetically removing duplicates. output to text file.
 	$extractionsArray | Sort-Object -Unique | Out-File -Path #***WHERE?***
 
+}
+
+# script starts here
+# check if searchType equals "wordpresses"
+if ($searchType -eq "wordpresses")
+{
+    # wrap $newSearchQuery in quotes
+    $newSearchQuery = "`'$searchQuery`'"
+
+    # extract "." from searchQuery
+    $searchQuery = $searchQuery -replace '[.]'
+
+    # proceed with URL extraction for "wordpresses"
+    Get-RefURLs
+}
+else
+{
+    # else proceed with URL extraction for "plugins" or "themes"
+    Get-RefURLs
 }
