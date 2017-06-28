@@ -101,7 +101,7 @@ Function Build_Index
 if ($searchType -eq "wordpresses")
 {
     # wrap $newSearchQuery in quotes
-    $newSearchQuery = "`'$searchQuery`'"
+    $newSearchQuery = "$searchQuery"
 
     # extract "." from searchQuery
     $searchQuery = $searchQuery -replace '[.]'
