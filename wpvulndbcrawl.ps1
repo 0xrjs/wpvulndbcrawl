@@ -69,7 +69,18 @@ Function Build_Index
 	Do
 	{
 		#retrieve html
-		$html = Invoke-WebRequest -Uri https://wpvulndb.com/$($Index)?page=$($count)
+		$html = Invoke-WebRequest -Uri "https://wpvulndb.com/$($Index)?page=$($count)"
+		Start-Sleep -Seconds 2
+		
+		# get the total page count on the first iteration
+		If ($count -eq 1)
+		{	
+			# look at html a tags. pull the last match (which is last page). split on <> and get the page number from the href.
+			$pageCount = (($html.ParsedHtml.getElementsByTagName("a")) | ? {$_.outerhtml -like "*<A href=`"/$($Index)?page=*"} | % {$_.outerhtml})[-1].split("<*>")[2]
+		}
+		
+		#progress bar
+		Write-Progress -Activity "Extracting..." -Status "Processing Page $($count) of $($pageCount)" -PercentComplete (($count/$pageCount) * 100)
 		
 		#extract from the links all plugins or themes
 		$extractions = ($html.links.href | Select-String -Pattern "/$($Index)/") | % {$_.tostring().split('/')[2]}
@@ -91,8 +102,8 @@ Function Build_Index
 	}
 	Until ($nullpage -eq $True)
 
-	# take arraylist and sort alphabetically removing duplicates. output to text file.
-	$extractionsArray | Sort-Object -Unique | Out-File -Path #***WHERE?***
+	# take arraylist and sort alphabetically removing duplicates. output to text file in current working directory.
+	$extractionsArray | Sort-Object -Unique | Out-File -FilePath .\$($Index)_list.txt
 
 }
 
