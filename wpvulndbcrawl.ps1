@@ -46,7 +46,7 @@ Function Build_Index
 	param
 	(
 		[Parameter(Mandatory=$True,Position=1)]
-		[ValidateSet("plugins","themes")]
+		[ValidateSet(“wordpresses”,"plugins","themes")]
 		[string]$Index
 	)
 	
@@ -85,5 +85,3 @@ Function Build_Index
 	$extractionsArray | Sort-Object -Unique | Out-File -Path #***WHERE?***
 
 }
-
-# tes commemt
