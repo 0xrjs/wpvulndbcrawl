@@ -93,18 +93,20 @@ Function Get-Index
 		{
 			$nullPage = $True
 		}
-		# add the extracted plugins/themes to the arraylist. Out-null because adding items to array has terminal output. increment page count by one.
+		# add the extracted plugins/themes to the arraylist
 		Else
 		{
 			Foreach ($link in $extractions)
 			{
+                # Out-null because adding items to array has terminal output
 				$extractionsArray.Add($link) | Out-Null
 			}
 
             # progress bar
 		    Write-Progress -Activity "Extracting..." -Status "Processing Page $($count) of $($pageCount)" -PercentComplete (($count/$pageCount) * 100)
 
-			$count++
+			# increment page number
+            $count++
 		}
 	}
 	Until ($nullpage -eq $True)
@@ -153,6 +155,10 @@ elseif (!$action -and !$searchType -and !$searchQuery)
     # add code for if no params then display ascii art and usage options
 
     Write-Host "display usage options"
+    Get-Content .\README.md
 }
-
-# add code for any other kind of malformed input handling
+else
+{
+    # add code for any other kind of malformed input handling
+    Write-Host "error"
+}
