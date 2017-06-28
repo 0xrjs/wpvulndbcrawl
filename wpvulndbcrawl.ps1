@@ -9,6 +9,7 @@
     [string]$searchType,
 
     # add code for dynamic param building
+
     [Parameter(Mandatory=$False,Position=3)]
     [string]$searchQuery
 )
@@ -20,7 +21,7 @@ Function Get-RefURLs
     $uri = "https://wpvulndb.com/api/v2"
     $webCall = Invoke-WebRequest -URI $uri/$searchType/$searchQuery
 
-    # check if searchType equals "wordpresses"
+    # check if $searchType equals "wordpresses"
     if ($searchType -eq "wordpresses")
     {
         # need this because of the way WPVULNDB API works when queried for "wordpresses"
@@ -80,12 +81,9 @@ Function Get-Index
 		# get the total page count on the first iteration
 		If ($count -eq 1)
 		{	
-			# look at html a tags. pull the last match (which is last page). split on <> and get the page number from the href.
+			# look at html a tags and pull the last match (which is last page) then split on <> and get the page number from the href
 			$pageCount = (($html.ParsedHtml.getElementsByTagName("a")) | ? {$_.outerhtml -like "*<A href=`"/$($Index)?page=*"} | % {$_.outerhtml})[-1].split("<*>")[2]
 		}
-		
-		# progress bar
-		Write-Progress -Activity "Extracting..." -Status "Processing Page $($count) of $($pageCount)" -PercentComplete (($count/$pageCount) * 100)
 		
 		# extract from the links all plugins or themes
 		$extractions = ($html.links.href | Select-String -Pattern "/$($Index)/") | % {$_.tostring().split('/')[2]}
@@ -102,6 +100,10 @@ Function Get-Index
 			{
 				$extractionsArray.Add($link) | Out-Null
 			}
+
+            # progress bar
+		    Write-Progress -Activity "Extracting..." -Status "Processing Page $($count) of $($pageCount)" -PercentComplete (($count/$pageCount) * 100)
+
 			$count++
 		}
 	}
@@ -119,7 +121,7 @@ if ($searchType -eq "wordpresses")
     # wrap $newSearchQuery in quotes
     $newSearchQuery = "$searchQuery"
 
-    # extract "." from searchQuery
+    # extract "." from $searchQuery
     $searchQuery = $searchQuery -replace '[.]'
 
     # proceed with URL extraction for "wordpresses"
@@ -133,11 +135,24 @@ elseif ($searchType -eq "plugins" -or $searchType -eq "themes")
 elseif ($action -eq "Get-Index")
 {
     # proceed with building index to aid vuln search
+    
+    Write-Host "### Building index for wordpresses ###"
     Get-Index("wordpresses")
-    Get-Index("plugins")
-    Get-Index("themes")
-}
+    Write-Host "### Done ###"
 
-# add code for if no params then display ascii art and usage options
+    Write-Host "### Building index for plugins ###"
+    Get-Index("plugins")
+    Write-Host "### Done ###"
+    
+    Write-Host "### Building index for themes ###"
+    Get-Index("themes")
+    Write-Host "### Done ###"
+}
+elseif (!$action -and !$searchType -and !$searchQuery)
+{
+    # add code for if no params then display ascii art and usage options
+
+    Write-Host "display usage options"
+}
 
 # add code for any other kind of malformed input handling
