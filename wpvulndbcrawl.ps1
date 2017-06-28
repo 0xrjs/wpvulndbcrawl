@@ -1,10 +1,15 @@
 ﻿Param
 (
-    [Parameter(Mandatory=$True,Position=1)]
+    [Parameter(Mandatory=$False,Position=1)]
+    [ValidateSet(“Get-Index")] 
+    [string]$action,
+
+    [Parameter(Mandatory=$False,Position=2)]
     [ValidateSet(“wordpresses”,”plugins”,”themes”)] 
     [string]$searchType,
 
-    [Parameter(Mandatory=$True,Position=2)]
+    # add code for dynamic param building
+    [Parameter(Mandatory=$False,Position=3)]
     [string]$searchQuery
 )
 
@@ -50,27 +55,27 @@ Function Get-RefURLs
     $vulns | Select-Object -Property * -ExcludeProperty references
 }
 
-# build serach index to aid users in their queries
-Function Build_Index
+# build search index to aid users in their queries
+Function Get-Index
 {
-	param
+	Param
 	(
 		[Parameter(Mandatory=$True,Position=1)]
 		[ValidateSet(“wordpresses”,"plugins","themes")]
 		[string]$Index
 	)
 	
-	#instatiate arraylist to contain all plugins/themes in loop
+	# instatiate arraylist to contain all plugins/themes in loop
 	[System.Collections.ArrayList]$extractionsArray = @()
-	#count to iterate through pages via URI
+	# count to iterate through pages via URI
 	$count = 1
-	#flag for loop exit
+	# flag for loop exit
 	$nullPage = $False
 	Do
 	{
-		#retrieve html
+		# retrieve html
 		$html = Invoke-WebRequest -Uri "https://wpvulndb.com/$($Index)?page=$($count)"
-		Start-Sleep -Seconds 2
+		Start-Sleep -Seconds 3
 		
 		# get the total page count on the first iteration
 		If ($count -eq 1)
@@ -79,18 +84,18 @@ Function Build_Index
 			$pageCount = (($html.ParsedHtml.getElementsByTagName("a")) | ? {$_.outerhtml -like "*<A href=`"/$($Index)?page=*"} | % {$_.outerhtml})[-1].split("<*>")[2]
 		}
 		
-		#progress bar
+		# progress bar
 		Write-Progress -Activity "Extracting..." -Status "Processing Page $($count) of $($pageCount)" -PercentComplete (($count/$pageCount) * 100)
 		
-		#extract from the links all plugins or themes
+		# extract from the links all plugins or themes
 		$extractions = ($html.links.href | Select-String -Pattern "/$($Index)/") | % {$_.tostring().split('/')[2]}
 		
-		#if there are no plugins or themes (last page), set exit flag true to exit loop
+		# if there are no plugins or themes (last page), set exit flag true to exit loop
 		If ($extractions -eq $Null)
 		{
 			$nullPage = $True
 		}
-		#add the extracted plugins/themes to the arraylist. Out-null because adding items to array has terminal output. increment page count by one.
+		# add the extracted plugins/themes to the arraylist. Out-null because adding items to array has terminal output. increment page count by one.
 		Else
 		{
 			Foreach ($link in $extractions)
@@ -122,6 +127,17 @@ if ($searchType -eq "wordpresses")
 }
 elseif ($searchType -eq "plugins" -or $searchType -eq "themes")
 {
-    # else proceed with URL extraction for "plugins" or "themes"
+    # proceed with URL extraction for "plugins" or "themes"
     Get-RefURLs
 }
+elseif ($action -eq "Get-Index")
+{
+    # proceed with building index to aid vuln search
+    Get-Index("wordpresses")
+    Get-Index("plugins")
+    Get-Index("themes")
+}
+
+# add code for if no params then display ascii art and usage options
+
+# add code for any other kind of malformed input handling
