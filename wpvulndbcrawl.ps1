@@ -9,7 +9,6 @@
     [string]$searchType,
 
     # add code for dynamic param building
-
     [Parameter(Mandatory=$False,Position=3)]
     [string]$searchQuery
 )
@@ -154,11 +153,14 @@ elseif (!$action -and !$searchType -and !$searchQuery)
 {
     # add code for if no params then display ascii art and usage options
 
-    Write-Host "display usage options"
-    Get-Content .\README.md
-}
-else
-{
-    # add code for any other kind of malformed input handling
-    Write-Host "error"
+    Try
+    {
+        Get-Content .\README.md -ErrorAction Stop
+    }
+    Catch
+    {
+        Write-Host $_.Exception.Message -ForegroundColor Yellow
+        Write-Host "Try again cloning this repository from GitHub!" -ForegroundColor Yellow
+    }
+    exit
 }
