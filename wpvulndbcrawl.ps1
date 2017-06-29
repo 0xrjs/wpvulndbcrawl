@@ -117,6 +117,14 @@ Function Get-Index
     exit
 }
 
+# exception handling for HTTP 404 responses
+Function Handle-404
+{
+    Write-Host $_.Exception.Message -ForegroundColor Yellow
+    Write-Host "Please try again!" -ForegroundColor Yellow
+    exit
+}
+
 # script starts here
 # check if searchType equals "wordpresses"
 if ($searchType -eq "wordpresses")
@@ -134,9 +142,7 @@ if ($searchType -eq "wordpresses")
     }
     Catch
     {
-        Write-Host $_.Exception.Message -ForegroundColor Yellow
-        Write-Host "Please try again!" -ForegroundColor Yellow
-        exit
+        Handle-404
     }
 }
 elseif ($searchType -eq "plugins" -or $searchType -eq "themes")
@@ -148,9 +154,7 @@ elseif ($searchType -eq "plugins" -or $searchType -eq "themes")
     }
     Catch
     {
-        Write-Host $_.Exception.Message -ForegroundColor Yellow
-        Write-Host "Please try again!" -ForegroundColor Yellow
-        exit
+        Handle-404
     }
 }
 elseif ($action -eq "Get-Index")
