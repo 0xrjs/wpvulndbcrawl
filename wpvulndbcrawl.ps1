@@ -8,7 +8,6 @@
     [ValidateSet(“wordpresses”,”plugins”,”themes”)] 
     [string]$searchType,
 
-    # add code for dynamic param building
     [Parameter(Mandatory=$False,Position=3)]
     [string]$searchQuery
 )
@@ -53,6 +52,8 @@ Function Get-RefURLs
 
     # display the final parsed results
     $vulns | Select-Object -Property * -ExcludeProperty references
+
+    exit
 }
 
 # build search index to aid users in their queries
@@ -113,6 +114,7 @@ Function Get-Index
 	# take arraylist and sort alphabetically removing duplicates. output to text file in current working directory.
 	$extractionsArray | Sort-Object -Unique | Out-File -FilePath .\$($Index)_list.txt
 
+    exit
 }
 
 # script starts here
@@ -126,12 +128,30 @@ if ($searchType -eq "wordpresses")
     $searchQuery = $searchQuery -replace '[.]'
 
     # proceed with URL extraction for "wordpresses"
-    Get-RefURLs
+    Try
+    {
+        Get-RefURLs
+    }
+    Catch
+    {
+        Write-Host $_.Exception.Message -ForegroundColor Yellow
+        Write-Host "Please try again!" -ForegroundColor Yellow
+        exit
+    }
 }
 elseif ($searchType -eq "plugins" -or $searchType -eq "themes")
 {
     # proceed with URL extraction for "plugins" or "themes"
-    Get-RefURLs
+    Try
+    {
+        Get-RefURLs
+    }
+    Catch
+    {
+        Write-Host $_.Exception.Message -ForegroundColor Yellow
+        Write-Host "Please try again!" -ForegroundColor Yellow
+        exit
+    }
 }
 elseif ($action -eq "Get-Index")
 {
@@ -161,6 +181,6 @@ elseif (!$action -and !$searchType -and !$searchQuery)
     {
         Write-Host $_.Exception.Message -ForegroundColor Yellow
         Write-Host "Try again cloning this repository from GitHub!" -ForegroundColor Yellow
+        exit
     }
-    exit
 }
